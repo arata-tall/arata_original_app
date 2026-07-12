@@ -1,23 +1,51 @@
-//
-//  ContentView.swift
-//  arata_original_app
-//
-//  Created by Arata Shimizu on 2026/07/12.
-//
-
 import SwiftUI
 
 struct ContentView: View {
+    // 現在選択されているタブを管理する状態変数
+    @State private var selectedTab = 0
     var body: some View {
-        VStack {
-            Image(systemName: "globe")
-                .imageScale(.large)
-                .foregroundStyle(.tint)
-            Text("Hello, world!")
+        TabView(selection: $selectedTab) {
+            
+            // 1つ目の画面
+            GeminiView()
+                .tabItem {
+                    Image(systemName: "message")
+                    Text("ジェミニ")
+                }
+                .tag(0)
+            
+            // 2つ目の画面
+            CalenderView()
+                .tabItem {
+                    Image(systemName: "calendar")
+                    Text("カレンダー")
+                }
+                .tag(1)
+            
+            // 3つ目の画面
+          TodayView()
+                .tabItem {
+                    Image(systemName: "clock")
+                    Text("今日の予定")
+                }
+                .tag(2)
+            
+            // 4つ目の画面
+            TaskView()
+                .tabItem {
+                    Image(systemName: "checklist")
+                    Text("タスク")
+                }
+                .tag(3)
         }
-        .padding()
     }
 }
+
+
+
+
+
+
 
 #Preview {
     ContentView()
