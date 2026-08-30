@@ -1,6 +1,6 @@
 import SwiftUI
 
-// MARK: - 1. データモデルの定義（重複を防ぐため、プロジェクト内でここだけに記述します）
+// MARK: - 1. データモデルの定義
 enum ProjectCalendarColor: String, CaseIterable, Identifiable {
     case wine = "ワイン", rose = "ローズ", flamingo = "フラミンゴ", tomato = "トマト", mikan = "ミカン"
     case kabocha = "カボチャ", mango = "マンゴー", banana = "バナナ", lemon = "レモン", avocado = "アボカド"
@@ -40,102 +40,78 @@ struct ProjectAppointment: Identifiable, Equatable {
 
 // MARK: - 2. メインのカレンダー画面
 struct CalenderView: View {
-    @State private var currentMonth: Date = {
-        let calendar = Calendar.current
-        var components = DateComponents()
-        components.year = 2026
-        components.month = 7
-        components.day = 1
-        return calendar.date(from: components) ?? Date()
-    }()
-    
-    @State private var selectedDate: Date = {
-        let calendar = Calendar.current
-        var components = DateComponents()
-        components.year = 2026
-        components.month = 7
-        components.day = 13
-        return calendar.date(from: components) ?? Date()
-    }()
+    @State private var currentMonth: Date = Date()
+    @State private var selectedDate: Date = Date()
     
     @State private var isShowingAddEvent = false
     @State private var editingAppointment: ProjectAppointment? = nil
     
     @State private var appointments: [ProjectAppointment] = [
-        ProjectAppointment(title: "プロジェクト進捗報告会", location: "会議室A", date: Calendar.current.date(from: DateComponents(year: 2026, month: 7, day: 13))!, startTime: "10:00", endTime: "10:30", calColor: .cobalt),
-        ProjectAppointment(title: "プレゼンの仕上げ", location: "デスク", date: Calendar.current.date(from: DateComponents(year: 2026, month: 7, day: 13))!, startTime: "10:30", endTime: "11:30", calColor: .tomato)
+        ProjectAppointment(title: "プロジェクト進捗報告会", location: "会議室A", date: Date(), startTime: "10:00", endTime: "10:30", calColor: .cobalt),
+        ProjectAppointment(title: "プレゼンの仕上げ", location: "デスク", date: Date(), startTime: "10:30", endTime: "11:30", calColor: .tomato)
     ]
     
     private let calendar = Calendar.current
-    private let weekdays = ["SUN", "MON", "TUE", "WED", "THU", "FRI", "SAT"]
+    private let weekdays = ["日", "月", "火", "水", "木", "金", "土"]
     
     var body: some View {
         NavigationStack {
             VStack(spacing: 0) {
-                
-                // カレンダーヘッダー
+                // カレンダーヘッダー（月切替）
                 HStack {
                     Text(formatYearMonth(currentMonth))
-                        .font(.system(size: 20, weight: .bold))
-                        .foregroundColor(.primary)
-                    
-                    Image(systemName: "chevron.right")
-                        .font(.system(size: 14, weight: .bold))
-                        .foregroundColor(.red)
+                        .font(.title2)
+                        .fontWeight(.bold)
                     
                     Spacer()
                     
-                    HStack(spacing: 24) {
+                    HStack(spacing: 20) {
                         Button(action: { changeMonth(by: -1) }) {
                             Image(systemName: "chevron.left")
-                                .font(.system(size: 18, weight: .bold))
-                                .foregroundColor(.red)
+                                .font(.system(size: 16, weight: .semibold))
                         }
                         Button(action: { changeMonth(by: 1) }) {
                             Image(systemName: "chevron.right")
-                                .font(.system(size: 18, weight: .bold))
-                                .foregroundColor(.red)
+                                .font(.system(size: 16, weight: .semibold))
                         }
                     }
+                    .foregroundColor(.blue)
                 }
-                .padding(.horizontal, 24)
-                .padding(.top, 16)
-                .padding(.bottom, 20)
+                .padding(.horizontal, 20)
+                .padding(.vertical, 12)
                 
                 // 曜日ラベル
                 HStack(spacing: 0) {
-                    ForEach(weekdays, id: \.self) { weekday in
-                        Text(weekday)
-                            .font(.system(size: 12, weight: .bold))
+                    ForEach(0..<weekdays.count, id: \.self) { index in
+                        Text(weekdays[index])
+                            .font(.caption)
+                            .fontWeight(.semibold)
                             .frame(maxWidth: .infinity)
-                            .foregroundColor(.secondary)
+                            .foregroundColor(index == 0 ? .red : (index == 6 ? .blue : .secondary))
                     }
                 }
-                .padding(.horizontal, 12)
                 .padding(.bottom, 8)
                 
                 // カレンダーグリッド
                 let days = generateDaysInMonth(for: currentMonth)
                 let columns = Array(repeating: GridItem(.flexible(), spacing: 0), count: 7)
                 
-                LazyVGrid(columns: columns, spacing: 10) {
+                LazyVGrid(columns: columns, spacing: 8) {
                     ForEach(0..<days.count, id: \.self) { index in
                         if let dayDate = days[index] {
                             let dayNum = calendar.component(.day, from: dayDate)
                             let isSelected = calendar.isDate(dayDate, inSameDayAs: selectedDate)
                             let isToday = calendar.isDateInToday(dayDate)
                             
-                            Button(action: {
-                                selectedDate = dayDate
-                            }) {
+                            Button(action: { selectedDate = dayDate }) {
                                 Text("\(dayNum)")
-                                    .font(.system(size: 16, weight: isSelected ? .bold : .medium))
+                                    .font(.system(size: 16, weight: isSelected ? .bold : .regular))
                                     .frame(width: 36, height: 36)
                                     .background(
                                         Circle()
-                                            .fill(isSelected ? Color.red.opacity(0.15) : Color.clear)
+                                            .fill(isSelected ? Color.blue : (isToday ? Color.gray.opacity(0.15) : Color.clear))
                                     )
-                                    .foregroundColor(isSelected ? .red : (isToday ? .blue : .primary))
+                                    .foregroundColor(isSelected ? .white : (isToday ? .blue : .primary))
                             }
                         } else {
                             Text("")
@@ -144,80 +120,57 @@ struct CalenderView: View {
                     }
                 }
                 .padding(.horizontal, 12)
+                .padding(.bottom, 12)
                 
                 Divider()
-                    .padding(.top, 20)
                 
                 // スケジュール表示エリア
-                VStack(alignment: .leading, spacing: 12) {
-                    HStack {
-                        Text("今日のスケジュール")
-                            .font(.system(size: 22, weight: .bold))
-                        Spacer()
-                        Text(formatSelectedDate(selectedDate))
-                            .font(.system(size: 13))
-                            .foregroundColor(.secondary)
-                    }
-                    .padding(.horizontal, 20)
-                    .padding(.top, 16)
-                    
-                    let filteredAppointments = appointments.filter { calendar.isDate($0.date, inSameDayAs: selectedDate) }
-                    
+                let filteredAppointments = appointments.filter { calendar.isDate($0.date, inSameDayAs: selectedDate) }
+                
+                List {
                     if filteredAppointments.isEmpty {
-                        VStack(spacing: 12) {
-                            Spacer()
-                            Text("予定がありません")
-                                .font(.system(size: 15))
-                                .foregroundColor(.secondary)
-                            
-                            Button(action: { isShowingAddEvent = true }) {
-                                HStack {
-                                    Image(systemName: "plus.circle.fill")
-                                    Text("予定を追加")
-                                }
-                                .font(.system(size: 15, weight: .semibold))
-                                .foregroundColor(.blue)
-                            }
-                            Spacer()
-                        }
-                        .frame(maxWidth: .infinity, maxHeight: .infinity)
+                        Text("予定はありません")
+                            .font(.subheadline)
+                            .foregroundColor(.secondary)
+                            .frame(maxWidth: .infinity, alignment: .center)
+                            .padding(.vertical, 20)
+                            .listRowBackground(Color.clear)
                     } else {
-                        ScrollView {
-                            VStack(spacing: 12) {
-                                ForEach(filteredAppointments) { app in
-                                    Button(action: { editingAppointment = app }) {
-                                        HStack(spacing: 0) {
-                                            Image(systemName: "checkmark.circle")
-                                                .font(.system(size: 18))
-                                                .foregroundColor(.white)
-                                                .padding(.leading, 16)
-                                            
-                                            VStack(alignment: .leading, spacing: 4) {
-                                                Text(app.title)
-                                                    .font(.system(size: 16, weight: .bold))
-                                                Text("\(app.startTime) 〜 \(app.endTime)")
-                                                    .font(.system(size: 13))
+                        ForEach(filteredAppointments) { app in
+                            Button(action: { editingAppointment = app }) {
+                                HStack(spacing: 12) {
+                                    // ワンポイントアクセント（左の縦線）
+                                    RoundedRectangle(cornerRadius: 2)
+                                        .fill(app.calColor.color)
+                                        .frame(width: 4, height: 36)
+                                    
+                                    VStack(alignment: .leading, spacing: 4) {
+                                        Text(app.title)
+                                            .font(.system(size: 16, weight: .semibold))
+                                            .foregroundColor(.primary)
+                                        
+                                        if !app.location.isEmpty {
+                                            HStack(spacing: 4) {
+                                                Image(systemName: "mappin.and.ellipse")
                                                 Text(app.location)
-                                                    .font(.system(size: 13))
                                             }
-                                            .foregroundColor(.white)
-                                            .padding(.vertical, 12)
-                                            .padding(.leading, 12)
-                                            
-                                            Spacer()
+                                            .font(.system(size: 13))
+                                            .foregroundColor(.secondary)
                                         }
-                                        .frame(maxWidth: .infinity)
-                                        .background(app.calColor.color)
-                                        .cornerRadius(16)
                                     }
-                                    .buttonStyle(PlainButtonStyle())
-                                    .padding(.horizontal, 20)
+                                    
+                                    Spacer()
+                                    
+                                    Text("\(app.startTime) 〜 \(app.endTime)")
+                                        .font(.system(size: 13))
+                                        .foregroundColor(.secondary)
                                 }
+                                .padding(.vertical, 4)
                             }
                         }
                     }
                 }
-                .background(Color(uiColor: .systemGroupedBackground))
+                .listStyle(.insetGrouped)
             }
             .navigationTitle("カレンダー")
             .navigationBarTitleDisplayMode(.inline)
@@ -250,16 +203,8 @@ struct CalenderView: View {
     
     private func formatYearMonth(_ date: Date) -> String {
         let formatter = DateFormatter()
-        formatter.dateFormat = "MMMM yyyy"
-        formatter.locale = Locale(identifier: "en_US")
+        formatter.dateFormat = "yyyy年 M月"
         return formatter.string(from: date)
-    }
-    
-    private func formatSelectedDate(_ date: Date) -> String {
-        let formatter = DateFormatter()
-        formatter.dateFormat = "MMMM dd, yyyy"
-        formatter.locale = Locale(identifier: "en_US")
-        return "選択された日: \(formatter.string(from: date))"
     }
     
     private func generateDaysInMonth(for date: Date) -> [Date?] {
@@ -345,7 +290,10 @@ struct ProjectAddEventView: View {
                 calColor = initialColor
                 let calendar = Calendar.current
                 let now = Date()
-                if let start = calendar.date(bySettingHour: calendar.component(.hour, from: now), minute: calendar.component(.minute, from: now), second: 0, of: selectedDate) {
+                let currentHour = calendar.component(.hour, from: now)
+                let currentMinute = calendar.component(.minute, from: now)
+                
+                if let start = calendar.date(bySettingHour: currentHour, minute: currentMinute, second: 0, of: selectedDate) {
                     startDateTime = start
                     endDateTime = calendar.date(byAdding: .hour, value: 1, to: start) ?? start
                 }
@@ -356,10 +304,13 @@ struct ProjectAddEventView: View {
                 }
                 ToolbarItem(placement: .navigationBarTrailing) {
                     Button("保存") {
+                        let calendar = Calendar.current
+                        let targetDate = calendar.startOfDay(for: startDateTime)
+                        
                         let newApp = ProjectAppointment(
                             title: title,
                             location: location,
-                            date: selectedDate,
+                            date: targetDate,
                             startTime: isAllDay ? "終日" : formatTime(startDateTime),
                             endTime: isAllDay ? "終日" : formatTime(endDateTime),
                             calColor: calColor
@@ -460,10 +411,16 @@ struct ProjectEditEventView: View {
             }
             .toolbar {
                 ToolbarItem(placement: .navigationBarLeading) {
-                    Button("Back") { dismiss() }
+                    Button(action: { dismiss() }) {
+                        Image(systemName: "chevron.left")
+                            .font(.system(size: 16, weight: .semibold))
+                            .foregroundColor(.blue)
+                    }
                 }
                 ToolbarItem(placement: .navigationBarTrailing) {
                     Button("保存") {
+                        let calendar = Calendar.current
+                        appointment.date = calendar.startOfDay(for: startDateTime)
                         appointment.startTime = isAllDay ? "終日" : formatTime(startDateTime)
                         appointment.endTime = isAllDay ? "終日" : formatTime(endDateTime)
                         
@@ -538,6 +495,8 @@ struct ProjectColorPickerView: View {
         }
     }
 }
+
 #Preview {
     CalenderView()
 }
+

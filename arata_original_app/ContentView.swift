@@ -23,7 +23,7 @@ struct ContentView: View {
                 .tag(1)
             
             // 3つ目の画面
-          TodayView()
+            TodayView()
                 .tabItem {
                     Image(systemName: "clock")
                     Text("今日の予定")
