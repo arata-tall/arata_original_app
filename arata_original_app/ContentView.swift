@@ -3,6 +3,7 @@ import SwiftUI
 struct ContentView: View {
     // 現在選択されているタブを管理する状態変数
     @State private var selectedTab = 0
+    @StateObject private var taskStore = TaskStore()
     var body: some View {
         TabView(selection: $selectedTab) {
             
@@ -38,6 +39,7 @@ struct ContentView: View {
                 }
                 .tag(3)
         }
+        .environmentObject(taskStore)
     }
 }
 

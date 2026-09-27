@@ -1,6 +1,7 @@
 
 
 import SwiftUI
+import Combine
 
 // 1. タスクのデータ構造
 struct TaskItem: Identifiable {
@@ -9,14 +10,25 @@ struct TaskItem: Identifiable {
     var dueDate: String
 }
 
-struct TaskView: View {
-    // 2. 初期データ
-    @State private var tasks = [
+/// カレンダーとタスク一覧で共通して使用するタスクの保存先です。
+final class TaskStore: ObservableObject {
+    @Published var tasks: [TaskItem] = [
         TaskItem(title: "プログラミングの学習", dueDate: "2026/06/28"),
         TaskItem(title: "買い物（牛乳、卵）", dueDate: "2026/06/29"),
         TaskItem(title: "部屋の掃除", dueDate: "2026/06/30"),
         TaskItem(title: "読書（30ページ読む）", dueDate: "2026/07/01")
     ]
+
+    func addTask(title: String, dueDate: Date) {
+        let formatter = DateFormatter()
+        formatter.locale = Locale(identifier: "ja_JP")
+        formatter.dateFormat = "yyyy/MM/dd"
+        tasks.append(TaskItem(title: title, dueDate: formatter.string(from: dueDate)))
+    }
+}
+
+struct TaskView: View {
+    @EnvironmentObject private var taskStore: TaskStore
     
     @State private var isShowingAddSheet = false
     @State private var newTaskTitle = ""
@@ -29,9 +41,9 @@ struct TaskView: View {
     // ★ 検索キーワードでフィルタリングされたタスクリスト
     var filteredTasks: [TaskItem] {
         if searchText.isEmpty {
-            return tasks
+            return taskStore.tasks
         } else {
-            return tasks.filter { $0.title.localizedCaseInsensitiveContains(searchText) }
+            return taskStore.tasks.filter { $0.title.localizedCaseInsensitiveContains(searchText) }
         }
     }
     
@@ -51,8 +63,8 @@ struct TaskView: View {
                                 .font(.title2)
                                 .onTapGesture {
                                     withAnimation {
-                                        if let index = tasks.firstIndex(where: { $0.id == task.id }) {
-                                            tasks.remove(at: index)
+                                        if let index = taskStore.tasks.firstIndex(where: { $0.id == task.id }) {
+                                            taskStore.tasks.remove(at: index)
                                         }
                                     }
                                 }
@@ -132,12 +144,7 @@ struct TaskView: View {
     
     // タスク追加
     private func addTask() {
-        let formatter = DateFormatter()
-        formatter.dateFormat = "yyyy/MM/dd"
-        let dateString = formatter.string(from: newTaskDate)
-        
-        let new = TaskItem(title: newTaskTitle, dueDate: dateString)
-        tasks.append(new)
+        taskStore.addTask(title: newTaskTitle, dueDate: newTaskDate)
         
         newTaskTitle = ""
         newTaskDate = Date()
@@ -147,8 +154,8 @@ struct TaskView: View {
     private func deleteTask(at offsets: IndexSet) {
         for index in offsets {
             let itemToRemove = filteredTasks[index]
-            if let originalIndex = tasks.firstIndex(where: { $0.id == itemToRemove.id }) {
-                tasks.remove(at: originalIndex)
+            if let originalIndex = taskStore.tasks.firstIndex(where: { $0.id == itemToRemove.id }) {
+                taskStore.tasks.remove(at: originalIndex)
             }
         }
     }
@@ -156,4 +163,5 @@ struct TaskView: View {
 
 #Preview {
     TaskView()
+        .environmentObject(TaskStore())
 }

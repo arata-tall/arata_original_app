@@ -40,8 +40,10 @@ struct ProjectAppointment: Identifiable, Equatable {
 
 // MARK: - 2. メインのカレンダー画面
 struct CalenderView: View {
+    @EnvironmentObject private var taskStore: TaskStore
     @State private var currentMonth: Date = Date()
     @State private var selectedDate: Date = Date()
+    @State private var newTaskTitle = ""
     
     @State private var isShowingAddEvent = false
     @State private var editingAppointment: ProjectAppointment? = nil
@@ -127,7 +129,15 @@ struct CalenderView: View {
                 // スケジュール表示エリア
                 let filteredAppointments = appointments.filter { calendar.isDate($0.date, inSameDayAs: selectedDate) }
                 
-                List {
+                VStack(spacing: 0) {
+                    CalendarTaskBar(title: $newTaskTitle, dueDate: selectedDate) {
+                        let trimmedTitle = newTaskTitle.trimmingCharacters(in: .whitespacesAndNewlines)
+                        guard !trimmedTitle.isEmpty else { return }
+                        taskStore.addTask(title: trimmedTitle, dueDate: selectedDate)
+                        newTaskTitle = ""
+                    }
+
+                    List {
                     if filteredAppointments.isEmpty {
                         Text("予定はありません")
                             .font(.subheadline)
@@ -169,8 +179,9 @@ struct CalenderView: View {
                             }
                         }
                     }
+                    }
+                    .listStyle(.insetGrouped)
                 }
-                .listStyle(.insetGrouped)
             }
             .navigationTitle("カレンダー")
             .navigationBarTitleDisplayMode(.inline)
@@ -498,5 +509,44 @@ struct ProjectColorPickerView: View {
 
 #Preview {
     CalenderView()
+        .environmentObject(TaskStore())
 }
 
+/// 選択日のタスクを、カレンダーからそのまま追加する入力バー。
+private struct CalendarTaskBar: View {
+    @Binding var title: String
+    let dueDate: Date
+    let onAdd: () -> Void
+
+    private var dueDateText: String {
+        let formatter = DateFormatter()
+        formatter.locale = Locale(identifier: "ja_JP")
+        formatter.dateFormat = "M月d日"
+        return formatter.string(from: dueDate)
+    }
+
+    var body: some View {
+        HStack(spacing: 10) {
+            Image(systemName: "checkmark.circle")
+                .foregroundColor(.blue)
+
+            TextField("タスクを追加", text: $title)
+                .submitLabel(.done)
+                .onSubmit(onAdd)
+
+            Text(dueDateText)
+                .font(.caption)
+                .foregroundColor(.secondary)
+
+            Button(action: onAdd) {
+                Image(systemName: "plus.circle.fill")
+                    .font(.title3)
+            }
+            .disabled(title.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
+            .accessibilityLabel("タスクを追加")
+        }
+        .padding(.horizontal, 16)
+        .padding(.vertical, 12)
+        .background(Color(uiColor: .secondarySystemGroupedBackground))
+    }
+}
